@@ -1,0 +1,27 @@
+zjp小程序
+
+通过小程序请求抓包，拿到 token 和源服务器的 URL
+
+前端用的加密库是 crypto-js
+
+加密算法：AES
+加密模式：ECB
+填充算法：Pksc7
+
+通过逆向拿到的加密对象是当前的时间戳
+密钥1：674e75526967644b5a34724d774b6e704c325458483476353168333372527174
+密钥2：57554764556f6d4939397a53765a4b6e413849576836536174524452736a746b
+
+普通签到
+const user-sign = CryptoJS.AES.encrypt(时间戳, 密钥1, {
+        mode: CryptoJS.mode.ECB,
+        padding: CryptoJS.pad.Pkcs7
+}).toString()
+
+二维码签到获取方法
+const str = CryptoJS.AES.encrypt(JSON.stringify({userId, activityId, signId}), 密钥2, {
+        mode: CryptoJS.mode.ECB,
+        padding: CryptoJS.pad.Pkcs7
+}).toString()
+
+将 str 转为二维码图片，比如草料二维码
