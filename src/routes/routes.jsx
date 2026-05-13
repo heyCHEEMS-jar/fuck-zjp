@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom'
 
 const Login = lazy(() => import('../pages/login'))
 const Index = lazy(() => import('../pages/index'))
+const ActivityList = lazy(() => import('../pages/activity-list'))
 
 const lazyLoad = Component => {
 	return (
@@ -23,6 +24,11 @@ const routes = [
 	},
 	{
 		path: '/index',
+		element: lazyLoad(Index),
+		needAuth: true
+	},
+	{
+		path: '/activity-list',
 		element: lazyLoad(Index),
 		needAuth: true
 	},

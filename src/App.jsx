@@ -1,10 +1,11 @@
 import { Routes } from 'react-router-dom'
 import { createRoutes } from './routes/createRoutes'
 import routes from './routes/routes'
+import styles from './styles/App.module.css'
 
 export default function App() {
 	return (
-		<div className="App">
+		<div className={styles.App}>
 			<Routes>{createRoutes(routes)}</Routes>
 		</div>
 	)

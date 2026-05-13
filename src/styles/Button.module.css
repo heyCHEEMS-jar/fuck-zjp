@@ -1,0 +1,99 @@
+.button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 32px;
+	border-radius: 8px;
+	background: #db2777;
+	padding: 0 14px;
+	color: #fff;
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1;
+	gap: 8px;
+	white-space: nowrap;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	cursor: pointer;
+	user-select: none;
+	border: none;
+}
+
+.button:disabled {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
+.button:hover {
+	background: #be185d;
+}
+
+.button:active {
+	background: #9d174d;
+}
+
+.variantOutline {
+	background: transparent;
+	border: 1px solid #be185d;
+	color: #be185d;
+	box-shadow: none;
+}
+
+.variantOutline:hover {
+	background: #fce7f3;
+}
+
+.variantOutline:active {
+	background: #fbcfe8;
+}
+
+.variantMinimal {
+	background: transparent;
+	border: 1px solid transparent;
+	color: #3f3f46;
+	box-shadow: none;
+}
+
+.variantMinimal:hover {
+	background: #f4f4f5;
+}
+
+.variantMinimal:active {
+	background: #e4e4e7;
+}
+
+.destructive {
+	background: #dc2626;
+}
+
+.destructive:hover {
+	background: #b91c1c;
+}
+
+.destructive:active {
+	background: #991b1b;
+}
+
+.destructiveOutline {
+	border-color: #b91c1c;
+	color: #b91c1c;
+}
+
+.destructiveOutline:hover {
+	background: #fee2e2;
+}
+
+.destructiveOutline:active {
+	background: #fecaca;
+}
+
+.destructiveMinimal {
+	color: #b91c1c;
+}
+
+.destructiveMinimal:hover {
+	background: #fee2e2;
+}
+
+.destructiveMinimal:active {
+	background: #fecaca;
+}
