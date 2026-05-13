@@ -17,3 +17,8 @@
 	width: fit-content;
 	margin: 16px auto;
 }
+
+.message {
+	text-align: center;
+	margin-bottom: 30px;
+}

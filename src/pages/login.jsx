@@ -7,8 +7,8 @@ import { throttle } from '../utils/util.js'
 
 export default function Login() {
 	const [loading, setLoading] = useState(false)
-	const handleSubmit = useCallback(async e => {
-		e.preventDefault()
+	const [message, setMessage] = useState('')
+	const _handleSubmit = useCallback(async e => {
 		if (loading) return
 		setLoading(true)
 		const fd = new FormData(e.target)
@@ -16,17 +16,26 @@ export default function Login() {
 		const officeOpenId = fd.get('officeOpenId') || ''
 		const littleOpenId = fd.get('littleOpenId') || ''
 		try {
-			const data = await login({ openId, officeOpenId, littleOpenId })
-			data && localStorage.setItem('token', data)
-			console.log(data)
+			const res = await login({ openId, officeOpenId, littleOpenId })
+			res.data && localStorage.setItem('token', res.data)
+			console.log(res)
+		} catch (err) {
+			setMessage(err.message || '')
 		} finally {
 			setLoading(false)
 		}
 	}, [])
-	const debouncedSubmit = useMemo(() => throttle(handleSubmit, 2000, { immediate: true }), [handleSubmit])
+	const debouncedSubmit = useMemo(() => throttle(_handleSubmit, 2000, { immediate: true }), [_handleSubmit])
 
 	return (
-		<form onSubmit={debouncedSubmit} className={styles.container}>
+		<form
+			onSubmit={e => {
+				e.preventDefault()
+				debouncedSubmit(e)
+			}}
+			className={styles.container}
+		>
+			<div className={styles.message}>{message}</div>
 			<div className={styles['input-container']}>
 				<label htmlFor="openId">Open ID</label>
 				<Input id="openId" name="openId" placeholder="输入 openId" />
