@@ -23,11 +23,13 @@
     ]
   },
   "dependencies": {
+    "@radix-ui/react-avatar": "^1.1.11",
     "axios": "^1.16.0",
     "class-variance-authority": "^0.7.1",
     "crypto-js": "^4.2.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "react-photo-view": "^1.2.7",
     "react-router-dom": "^7.15.0"
   },
   "devDependencies": {

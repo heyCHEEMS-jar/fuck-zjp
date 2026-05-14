@@ -51,3 +51,9 @@ export const throttle = (func, delay, options = { immediate: false }) => {
 	}
 	return throttled
 }
+
+// 将xxxx-xx-xx 转为 xxxx/xx/xx
+export const formatDate = dateStr => {
+	if (!dateStr) return ''
+	return dateStr.replace(/-/g, '/')
+}

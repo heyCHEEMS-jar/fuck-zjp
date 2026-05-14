@@ -1,11 +1,13 @@
-import { Input } from '../components/Input.jsx'
-import { Button } from '../components/Button.jsx'
-import styles from '../styles/login.module.css'
+import { Input } from '../components/Input'
+import { Button } from '../components/Button'
+import styles from '../styles/pages/login.module.css'
 import { login } from '../api/index.js'
 import { useCallback, useMemo, useState } from 'react'
 import { throttle } from '../utils/util.js'
+import { useNavigate } from 'react-router-dom'
 
 export default function Login() {
+	const navigate = useNavigate()
 	const [loading, setLoading] = useState(false)
 	const [message, setMessage] = useState('')
 	const _handleSubmit = useCallback(async e => {
@@ -18,7 +20,7 @@ export default function Login() {
 		try {
 			const res = await login({ openId, officeOpenId, littleOpenId })
 			res.data && localStorage.setItem('token', res.data)
-			console.log(res)
+			navigate('/index', { replace: true })
 		} catch (err) {
 			setMessage(err.message || '')
 		} finally {

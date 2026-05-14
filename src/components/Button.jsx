@@ -1,5 +1,5 @@
 import React from 'react'
-import styles from '../styles/Button.module.css'
+import styles from '../styles/components/button.module.css'
 
 export const Button = React.forwardRef(({ className = '', destructive = false, variant = 'default', ...props }, ref) => {
 	const classes = [

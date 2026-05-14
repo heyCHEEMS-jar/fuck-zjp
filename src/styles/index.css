@@ -3,4 +3,9 @@ body {
 	font-family: monospace;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+	background: linear-gradient(160deg, #1f2937 0%, #111827 100%);
+}
+
+* {
+	scrollbar-width: thin;
 }

@@ -1,5 +1,5 @@
 import React from 'react'
-import styles from '../styles/Input.module.css'
+import styles from '../styles/components/input.module.css'
 
 export const Input = React.forwardRef(({ className = '', ...props }, ref) => {
 	return <input ref={ref} className={`${styles.input} ${className}`} {...props} />
