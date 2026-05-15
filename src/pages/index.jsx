@@ -1,34 +1,48 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { getActivityList, getUserInfo, getUserScores } from '../api'
+import { getActivityList, getAdminSignInfo, getSignInButton, getSignInStatus, getUserInfo, getUserScores, signIn } from '../api'
 import styles from '../styles/pages/index.module.css'
 import { Avatar, AvatarFallback, AvatarImage } from '../components/Avatar'
 import { Card, CardContent, CardDescription, CardTitle } from '../components/Card'
-import { formatDate, throttle } from '../utils/util'
+import { formatDate, logout, throttle } from '../utils/util'
 import { PhotoProvider, PhotoView } from 'react-photo-view'
 import 'react-photo-view/dist/react-photo-view.css'
 import { Button } from '../components/Button'
 import { VirtualList } from '../components/VirtualList'
 
+const plateMap = {
+	1: '完满',
+	2: '就创',
+	3: '名师课堂',
+	5: '体育体测'
+}
+
 export default function Index() {
 	const [list, setList] = useState([])
 	const [pageNum, setPageNum] = useState(1)
 	const [pageSize, setPageSize] = useState(10)
-	const [total, setTotal] = useState(0)
 	const [userInfo, setUserInfo] = useState({})
 	const [userScores, setUserScores] = useState({})
 	const loadingRef = useRef(false)
 	const [allLoaded, setAllLoaded] = useState(false) // 是否已加载到底
+	const [showBackTop, setShowBackTop] = useState(false)
+	const listRef = useRef(null)
+	const [activityType, setActivityType] = useState('全部') // 全部,审核中,待进行,进行中,已完结
+
+	const handleLogout = () => {
+		if (!window.confirm('确定要退出登录？')) return
+		logout()
+	}
 
 	// 初始获取活动
-	const getActivities = async () => {
+	const getActivities = async (n = 1, s = 10, type = '全部') => {
 		if (loadingRef.current) return
 		loadingRef.current = true
 		try {
-			const res = await getActivityList(1, pageSize)
-			const { records = [], total = 0 } = res.data || {}
+			const res = await getActivityList(n, s, type)
+			const { records = [] } = res.data || {}
 			setList(records)
-			setTotal(total)
-			console.log(res.data)
+			console.log(res)
+		} catch {
 		} finally {
 			loadingRef.current = false
 		}
@@ -39,8 +53,8 @@ export default function Index() {
 		if (allLoaded || loadingRef.current) return
 		loadingRef.current = true
 		try {
-			const res = await getActivityList(pageNum + 1, pageSize)
-			const { records = [], total = 0 } = res.data || {}
+			const res = await getActivityList(pageNum + 1, pageSize, activityType)
+			const { records = [] } = res.data || {}
 			setList(prev => {
 				const newList = [...prev, ...records]
 				if (newList.length === prev.length) {
@@ -48,28 +62,110 @@ export default function Index() {
 				}
 				return newList
 			})
-			setTotal(total)
 			setPageNum(prev => prev + 1)
+		} catch {
 		} finally {
 			loadingRef.current = false
 		}
-	}, [pageNum, pageSize, allLoaded])
+	}, [pageNum, pageSize, activityType, allLoaded])
 	const throttledLoadMore = useMemo(() => throttle(_loadMore, 100, { immediate: true }), [_loadMore])
 
-	// const handleScroll = useCallback(() => {
-	// 	const { scrollTop, scrollHeight } = document.documentElement || {}
-	// 	if (scrollTop === undefined || scrollHeight === undefined) return
-	// 	if (!allLoaded && scrollTop + window.innerHeight >= scrollHeight - REACH_BOTTOM_THRESHOLD) {
-	// 		throttledLoadMore()
-	// 	}
-	// }, [throttledLoadMore, allLoaded])
+	const handleScroll = e => {
+		const { scrollTop } = e.currentTarget
+		setShowBackTop(scrollTop >= 800)
+	}
 
-	// useEffect(() => {
-	// 	document.addEventListener('scroll', handleScroll)
-	// 	return () => {
-	// 		document.removeEventListener('scroll', handleScroll)
-	// 	}
-	// }, [handleScroll])
+	const handleBackTop = () => {
+		listRef.current.scrollTo({
+			top: 0,
+			behavior: 'smooth'
+		})
+	}
+
+	// 签到
+	const _handleSignIn = useCallback(
+		async item => {
+			if (loadingRef.current) return
+			loadingRef.current = true
+			try {
+				// 获取签到按钮状态
+				const signBtnRes = await getSignInButton(item.id)
+				if (!signBtnRes.data) throw new Error('未从响应中获取到数据')
+				const signBtnData = signBtnRes.data
+				// 获取管理端签到详情
+				const signInfoRes = await getAdminSignInfo({ activityId: item.id, signId: signBtnData.id, isCheckOrg: true })
+				if (!signInfoRes.data) throw new Error('未从响应中获取到数据')
+				const signData = signInfoRes.data
+				// 确认签到
+				if (!window.confirm('确定强制签到吗？')) throw '取消'
+				const signReqData = {
+					activityId: item.id,
+					currentTime: Date.now(),
+					buttonType: signData.buttonType,
+					buttonName: signData.name,
+					type: 1, // 签到类型,如扫码签到
+					signId: signData.id,
+					refreshTime: signData.refreshTime,
+					isHide: signData.isHide,
+					organizerId: signData.isHide,
+					latitude: signData.latitude,
+					longitude: signData.longitude
+				}
+				console.log('请求签到:', signReqData)
+				const signRes = await signIn(signReqData)
+				await getActivities(1, 10, activityType)
+				setAllLoaded(false)
+				setPageNum(1)
+				setPageSize(10)
+			} catch (err) {
+				err.message && alert(err.message)
+			} finally {
+				loadingRef.current = false
+			}
+		},
+		[getActivities, activityType]
+	)
+	const throttledSignIn = useMemo(() => throttle(_handleSignIn, 2000, { immediate: true }), [_handleSignIn])
+
+	// 获取签到开放时间
+	const _getSignInStatus = useCallback(async item => {
+		if (loadingRef.current) return
+		loadingRef.current = true
+		try {
+			const res = await getSignInStatus({
+				activityId: item.id,
+				type: 1 // 签到类型,如扫码签到
+			})
+			let msgStr = ''
+			res.data?.forEach(({ beginTime, endTime, name }) => {
+				const formatBegin = formatDate(beginTime)
+				const formatEnd = formatDate(endTime)
+				msgStr += `${name}\n`
+				if (beginTime) msgStr += `开始时间：${formatBegin}\n`
+				if (endTime) msgStr += `结束时间：${formatEnd}\n\n`
+			})
+			alert(msgStr.trim())
+		} catch (err) {
+			err.message && alert(err.message)
+		} finally {
+			loadingRef.current = false
+		}
+	}, [])
+	const throttledGetSignInStatus = useMemo(() => throttle(_getSignInStatus, 2000, { immediate: true }), [_getSignInStatus])
+
+	// 选择活动分类
+	const _selectActivityType = useCallback(
+		async type => {
+			if (activityType === type) return
+			setActivityType(type)
+			setAllLoaded(false)
+			setPageNum(1)
+			setPageSize(10)
+			await getActivities(1, 10, type)
+		},
+		[getActivities, activityType]
+	)
+	const throttledSelectType = useMemo(() => throttle(_selectActivityType, 400, { immediate: true }), [_selectActivityType])
 
 	useEffect(() => {
 		// 获取用户活动列表
@@ -84,28 +180,25 @@ export default function Index() {
 		})
 	}, [])
 
-	const ScoreList = useCallback(
-		() => (
-			<div>
-				当前总共<span>{userScores.total}</span>分
-				<div className={styles['score-list']}>
-					{userScores.list?.map((item, index) => {
-						return (
-							<div key={index}>
-								<br />
-								<span>
-									{item.name}({'>='}
-									{item.passScore}分)
-								</span>
-								<br />
-								已有<span className={item.value >= item.passScore ? styles['passed-score'] : styles['unpass-score']}>{item.value}</span>分
-							</div>
-						)
-					})}
-				</div>
+	const ScoreList = () => (
+		<div>
+			当前总共<span>{userScores.total}</span>分
+			<div className={styles['score-list']}>
+				{userScores.list?.map((item, index) => {
+					return (
+						<div key={index}>
+							<br />
+							<span>
+								{item.name}({'>='}
+								{item.passScore}分)
+							</span>
+							<br />
+							已有<span className={item.value >= item.passScore ? styles['passed-score'] : styles['unpass-score']}>{item.value}</span>分
+						</div>
+					)
+				})}
 			</div>
-		),
-		[userScores]
+		</div>
 	)
 
 	// 鼠标悬浮水波纹动画
@@ -135,10 +228,15 @@ export default function Index() {
 					<CardDescription>
 						{
 							<div className={styles['card-content']}>
-								<Avatar style={{ width: 80, height: 80 }}>
-									<AvatarImage src={userInfo.avatar} alt="User Avatar" />
-									<AvatarFallback>USER</AvatarFallback>
-								</Avatar>
+								<div className={styles['avatar-container']}>
+									<Avatar style={{ width: 80, height: 80 }}>
+										<AvatarImage src={userInfo.avatar} alt="User Avatar" />
+										<AvatarFallback>USER</AvatarFallback>
+									</Avatar>
+									<Button variant="outline" onClick={() => handleLogout()}>
+										退出登录
+									</Button>
+								</div>
 								<div>
 									<span>用户ID：{userInfo.userId}</span>
 									<br />
@@ -178,16 +276,44 @@ export default function Index() {
 			<Card className={styles.card}>
 				<CardContent>
 					<CardTitle>
-						<div className={styles.title}>活动列表</div>
+						<div className={styles['title-container']}>
+							<span>活动列表</span>
+							<div className={styles['type-options']}>
+								<span className={activityType === '全部' ? styles['active-option'] : null} onClick={() => throttledSelectType('全部')}>
+									全部
+								</span>
+								<span className={activityType === '审核中' ? styles['active-option'] : null} onClick={() => throttledSelectType('审核中')}>
+									审核中
+								</span>
+								<span className={activityType === '待开始' ? styles['active-option'] : null} onClick={() => throttledSelectType('待开始')}>
+									待开始
+								</span>
+								<span className={activityType === '进行中' ? styles['active-option'] : null} onClick={() => throttledSelectType('进行中')}>
+									进行中
+								</span>
+								<span className={activityType === '已完结' ? styles['active-option'] : null} onClick={() => throttledSelectType('已完结')}>
+									已完结
+								</span>
+							</div>
+						</div>
 					</CardTitle>
 					<CardDescription className={styles['card-content']}>
+						{showBackTop && (
+							<div className={styles['back-top']} onClick={handleBackTop}>
+								⬆
+							</div>
+						)}
 						<VirtualList
+							ref={listRef}
 							data={list}
-							estimatedHeight={150}
+							estimatedHeight={180}
 							onReachBottom={throttledLoadMore}
 							containerHeight="80vh"
+							gap={16}
 							rowKey="id"
-							suffix={allLoaded && <div style={{ paddingBottom: 16, width: '100%', textAlign: 'center' }}>已加载全部</div>}
+							onScroll={handleScroll}
+							suffix={allLoaded && <div style={{ paddingBottom: 16, width: '100%', textAlign: 'center' }}>{list.length ? '已加载全部' : ''}</div>}
+							empty={<div style={{ paddingTop: 60, width: '100%', textAlign: 'center' }}>空空如也~</div>}
 							renderItem={(item, index) => (
 								<div className={styles['activity-content-box']}>
 									<div className={styles['activity-content']} onMouseEnter={createRipple} onTouchStart={createRipple}>
@@ -195,12 +321,13 @@ export default function Index() {
 											<PhotoView src={item.pictureUrl}>
 												<img className={styles['activity-img']} loading="lazy" src={item.pictureUrl} alt="活动封面" />
 											</PhotoView>
+											<span className={styles.plate}>{plateMap[item.plate]}</span>
 										</PhotoProvider>
 										<div className={styles.activity}>
 											<div className={styles['activity-name']}>{item.name}</div>
 											<div className={styles['activity-time']}>
 												{item.beginTime ? `${formatDate(item.beginTime)}-` : ''}
-												{formatDate(item.endTime) ?? ''}
+												{formatDate(item.endTime) || ''}
 											</div>
 											<div className={styles['activity-unit']}>
 												主办单位：
@@ -224,7 +351,14 @@ export default function Index() {
 											</div>
 										</div>
 									</div>
-									<Button className={styles['sign-in-button']}>强制签到</Button>
+									{item.status === 5 && (
+										<div className={styles['sign-in-button-box']}>
+											<Button onClick={() => throttledGetSignInStatus(item)}>签到开放时间</Button>
+											<Button destructive onClick={() => throttledSignIn(item)}>
+												强制签到
+											</Button>
+										</div>
+									)}
 								</div>
 							)}
 						/>

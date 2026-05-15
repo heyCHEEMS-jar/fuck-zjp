@@ -57,3 +57,8 @@ export const formatDate = dateStr => {
 	if (!dateStr) return ''
 	return dateStr.replace(/-/g, '/')
 }
+
+export const logout = () => {
+	localStorage.removeItem('token')
+	window.location.href = '/login'
+}

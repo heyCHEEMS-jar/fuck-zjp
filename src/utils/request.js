@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { BASE_URL } from '../config'
 import { generateUserSign } from './sign'
+import { logout } from './util'
 
 const req = axios.create({
 	baseURL: BASE_URL,
@@ -24,6 +25,9 @@ req.interceptors.response.use(
 		if (code === 0 || code === 200) {
 			return response.data
 		}
+		if (code === 4001) {
+			logout()
+		}
 		console.error(response.data)
 		return Promise.reject(response.data)
 	},
@@ -31,8 +35,7 @@ req.interceptors.response.use(
 		console.error(error)
 		const response = error.response || {}
 		if (response.status === 401) {
-			localStorage.removeItem('token')
-			window.location.href = '/login'
+			logout()
 		}
 		return Promise.reject(response.data)
 	}

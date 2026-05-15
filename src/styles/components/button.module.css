@@ -18,17 +18,13 @@
 	border: none;
 }
 
+.button:active {
+	background: #9d174d;
+}
+
 .button:disabled {
 	opacity: 0.5;
 	pointer-events: none;
-}
-
-.button:hover {
-	background: #be185d;
-}
-
-.button:active {
-	background: #9d174d;
 }
 
 .variantOutline {
@@ -38,10 +34,15 @@
 	box-shadow: none;
 }
 
-.variantOutline:hover {
-	background: #fce7f3;
-}
+@media (min-width: 768px) {
+	.button:hover {
+		background: #be185d;
+	}
 
+	.variantOutline:hover {
+		background: #fce7f3;
+	}
+}
 .variantOutline:active {
 	background: #fbcfe8;
 }
