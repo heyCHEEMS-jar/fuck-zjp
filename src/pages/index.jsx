@@ -82,8 +82,8 @@ export default function Index() {
 		})
 	}
 
-	// 签到
-	const _handleSignIn = useCallback(
+	// 签到/签退
+	const _handleSign = useCallback(
 		async item => {
 			if (loadingRef.current) return
 			loadingRef.current = true
@@ -96,23 +96,38 @@ export default function Index() {
 				const signInfoRes = await getAdminSignInfo({ activityId: item.id, signId: signBtnData.id, isCheckOrg: true })
 				if (!signInfoRes.data) throw new Error('未从响应中获取到数据')
 				const signData = signInfoRes.data
-				// 确认签到
-				if (!window.confirm('确定强制签到吗？')) throw '取消'
-				const signReqData = {
-					activityId: item.id,
-					currentTime: Date.now(),
-					buttonType: signData.buttonType,
-					buttonName: signData.name,
-					type: 1, // 签到类型,如扫码签到
-					signId: signData.id,
-					refreshTime: signData.refreshTime,
-					isHide: signData.isHide,
-					organizerId: signData.isHide,
-					latitude: signData.latitude,
-					longitude: signData.longitude
+				// 确认签到/签退
+				if (!window.confirm(`当前可执行状态为${signData.name}，确定要强制${signData.name}吗？`)) throw '取消'
+				if (signData.buttonType === 1) {
+					const signInReqData = {
+						activityId: item.id,
+						currentTime: Date.now(),
+						buttonType: signData.buttonType, // 1:签到,2:签退
+						buttonName: signData.name,
+						type: 1, // 签到类型,如扫码签到
+						signId: signData.id,
+						refreshTime: signData.refreshTime,
+						isHide: signData.isHide,
+						organizerId: signData.isHide,
+						latitude: signData.latitude,
+						longitude: signData.longitude
+					}
+					console.log(`请求签到:`, signInReqData)
+					await signIn(signInReqData)
+				} else if (signData.buttonType === 2) {
+					const signOutReqData = {
+						activityId: item.id,
+						buttonType: signData.buttonType, // 1:签到,2:签退
+						type: 1, // 签到类型,如扫码签到
+						signId: signData.id,
+						latitude: signData.latitude,
+						longitude: signData.longitude
+					}
+					console.log(`请求签退:`, signOutReqData)
+					await signIn(signOutReqData)
+				} else {
+					throw { message: `未知的 buttonType: ${signData.buttonType}, buttonName: ${signData.buttonName}` }
 				}
-				console.log('请求签到:', signReqData)
-				const signRes = await signIn(signReqData)
 				await getActivities(1, 10, activityType)
 				setAllLoaded(false)
 				setPageNum(1)
@@ -125,7 +140,7 @@ export default function Index() {
 		},
 		[getActivities, activityType]
 	)
-	const throttledSignIn = useMemo(() => throttle(_handleSignIn, 2000, { immediate: true }), [_handleSignIn])
+	const throttledSign = useMemo(() => throttle(_handleSign, 2000, { immediate: true }), [_handleSign])
 
 	// 获取签到开放时间
 	const _getSignInStatus = useCallback(async item => {
@@ -354,8 +369,8 @@ export default function Index() {
 									{item.status === 5 && (
 										<div className={styles['sign-in-button-box']}>
 											<Button onClick={() => throttledGetSignInStatus(item)}>签到开放时间</Button>
-											<Button destructive onClick={() => throttledSignIn(item)}>
-												强制签到
+											<Button destructive onClick={() => throttledSign(item)}>
+												强制签到/签退
 											</Button>
 										</div>
 									)}

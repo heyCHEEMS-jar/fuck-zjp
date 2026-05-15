@@ -20,9 +20,12 @@ export const getUserInfo = () => request.get('/zjp/act-user/getUserInfo')
 // 获取积分信息
 export const getUserScores = () => request.get('/zjp/act-perfection-integral/getAppPerfectionIntegral')
 
-// 签到/签退
+// 签到
 export const signIn = (data = { currentTime, signId, activityId, buttonType, type, buttonName, refreshTime, latitude, longitude, organizerId, isHide }) =>
 	request.post('/zjp/act-activity-sign/saveActActivitySignIn', data)
+
+// 签退
+export const signOut = (data = { signId, activityId, buttonType, type, latitude, longitude }) => request.post('/zjp/act-activity-sign/beforeSaveActActivitySignOut', data)
 
 // 获取管理端签到/签退详情
 export const getAdminSignInfo = (params = { activityId, signId, isCheckOrg }) => request.get('/zjp/act-activity-sign-button/getSignButtonDetails', { params })
