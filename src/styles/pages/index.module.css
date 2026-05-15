@@ -140,6 +140,35 @@
 	pointer-events: none;
 }
 
+.code-container {
+	margin: 0 auto;
+	position: relative;
+	margin-top: 24px;
+}
+
+.code-img {
+	flex-shrink: 0;
+	width: 120px;
+	height: 120px;
+	align-self: center;
+	object-fit: contain;
+	cursor: pointer;
+}
+
+.close-code-img {
+	position: absolute;
+	right: -14px;
+	top: -16px;
+	cursor: pointer;
+	font-size: 20px;
+	color: #c3c3c3;
+	user-select: none;
+}
+
+.close-code-img:hover {
+	color: #fff;
+}
+
 .activity-img:hover {
 	transform: scale(1.02);
 }
@@ -194,6 +223,7 @@
 .sign-in-button-box {
 	display: flex;
 	justify-content: end;
+	flex-wrap: wrap;
 	gap: 4px;
 	margin-top: 4px;
 }

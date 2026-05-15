@@ -15,6 +15,11 @@ export const aesDecrypt = (encryptedText, key) => {
 	return decrypted.toString(CryptoJS.enc.Utf8)
 }
 
+// 解密二维码加密字符串
+export const decryptedCodeStr = encryptedText => {
+	return aesDecrypt(encryptedText, KEYS.key1)
+}
+
 // AES加密函数
 export const aesEncrypt = (text, key) => {
 	const keyHex = CryptoJS.enc.Hex.parse(key)
@@ -28,4 +33,9 @@ export const aesEncrypt = (text, key) => {
 // 生成user-sign
 export const generateUserSign = timestamp => {
 	return aesEncrypt(String(timestamp), KEYS.key2)
+}
+
+// 生成待转二维码图片的字符串
+export const generateCodeStr = (data = { activityId, currentTime, buttonType, buttonName, type, signId, refreshTime, isHide, organizerId }) => {
+	return aesEncrypt(JSON.stringify(data), KEYS.key1)
 }

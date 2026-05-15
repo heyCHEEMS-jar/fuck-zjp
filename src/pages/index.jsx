@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { getActivityList, getAdminSignInfo, getSignInButton, getSignInStatus, getUserInfo, getUserScores, signIn } from '../api'
+import { getActivityList, getAdminSignInfo, getSignInButton, getSignInStatus, getUserInfo, getUserScores, signIn, signOut } from '../api'
 import styles from '../styles/pages/index.module.css'
 import { Avatar, AvatarFallback, AvatarImage } from '../components/Avatar'
 import { Card, CardContent, CardDescription, CardTitle } from '../components/Card'
@@ -8,6 +8,8 @@ import { PhotoProvider, PhotoView } from 'react-photo-view'
 import 'react-photo-view/dist/react-photo-view.css'
 import { Button } from '../components/Button'
 import { VirtualList } from '../components/VirtualList'
+import { generateCodeStr } from '../utils/sign'
+import { createQRCode } from '../api/qr-code'
 
 const plateMap = {
 	1: '完满',
@@ -27,6 +29,7 @@ export default function Index() {
 	const [showBackTop, setShowBackTop] = useState(false)
 	const listRef = useRef(null)
 	const [activityType, setActivityType] = useState('全部') // 全部,审核中,待进行,进行中,已完结
+	const [codeUrls, setCodeUrls] = useState({}) // 二维码图片url
 
 	const handleLogout = () => {
 		if (!window.confirm('确定要退出登录？')) return
@@ -34,19 +37,18 @@ export default function Index() {
 	}
 
 	// 初始获取活动
-	const getActivities = async (n = 1, s = 10, type = '全部') => {
+	const getActivities = useCallback(async (n = 1, s = 10, type = '全部') => {
 		if (loadingRef.current) return
 		loadingRef.current = true
 		try {
 			const res = await getActivityList(n, s, type)
 			const { records = [] } = res.data || {}
 			setList(records)
-			console.log(res)
 		} catch {
 		} finally {
 			loadingRef.current = false
 		}
-	}
+	}, [])
 
 	// 加载更多活动
 	const _loadMore = useCallback(async () => {
@@ -81,6 +83,55 @@ export default function Index() {
 			behavior: 'smooth'
 		})
 	}
+
+	// 关闭二维码
+	const closeQRCode = item => {
+		setCodeUrls(prev => {
+			const next = { ...prev }
+			delete next[item.id]
+			return next
+		})
+	}
+
+	// 获取签到二维码
+	const _getQRCode = useCallback(async item => {
+		if (loadingRef.current) return
+		loadingRef.current = true
+		try {
+			// 获取签到按钮状态
+			const signBtnRes = await getSignInButton(item.id)
+			if (!signBtnRes.data) throw new Error('未从响应中获取到数据')
+			const signBtnData = signBtnRes.data
+			// 获取管理端签到详情
+			const signInfoRes = await getAdminSignInfo({ activityId: item.id, signId: signBtnData.id, isCheckOrg: true })
+			if (!signInfoRes.data) throw new Error('未从响应中获取到数据')
+			const signData = signInfoRes.data
+			// 加密请求体
+			const generateReqData = {
+				activityId: item.id,
+				currentTime: Date.now(),
+				buttonType: signData.buttonType, // 1:签到,2:签退
+				buttonName: signData.name,
+				type: 1, // 签到类型,如扫码签到
+				signId: signData.id,
+				refreshTime: signData.refreshTime,
+				isHide: signData.isHide,
+				organizerId: signData.isHide
+			}
+			console.log(`生成二维码加密请求体:`, generateReqData)
+			const encryptedStr = generateCodeStr(generateReqData)
+			const qrCodeUrl = await createQRCode({ data: encryptedStr })
+			setCodeUrls(prev => ({
+				...prev,
+				[item.id]: qrCodeUrl
+			}))
+		} catch (err) {
+			err.message && alert(err.message)
+		} finally {
+			loadingRef.current = false
+		}
+	}, [])
+	const throttledGetQRCode = useMemo(() => throttle(_getQRCode, 3000, { immediate: true }), [_getQRCode])
 
 	// 签到/签退
 	const _handleSign = useCallback(
@@ -124,7 +175,7 @@ export default function Index() {
 						longitude: signData.longitude
 					}
 					console.log(`请求签退:`, signOutReqData)
-					await signIn(signOutReqData)
+					await signOut(signOutReqData)
 				} else {
 					throw { message: `未知的 buttonType: ${signData.buttonType}, buttonName: ${signData.buttonName}` }
 				}
@@ -366,12 +417,29 @@ export default function Index() {
 											</div>
 										</div>
 									</div>
+									{/* 操作区 */}
 									{item.status === 5 && (
 										<div className={styles['sign-in-button-box']}>
 											<Button onClick={() => throttledGetSignInStatus(item)}>签到开放时间</Button>
+											<Button destructive onClick={() => throttledGetQRCode(item)}>
+												签到二维码
+											</Button>
 											<Button destructive onClick={() => throttledSign(item)}>
 												强制签到/签退
 											</Button>
+										</div>
+									)}
+									{/* 签到二维码 */}
+									{codeUrls[item.id] && (
+										<div className={styles['code-container']}>
+											<PhotoProvider>
+												<PhotoView src={codeUrls[item.id]}>
+													<img className={styles['code-img']} loading="lazy" src={codeUrls[item.id]} alt="签到二维码" />
+												</PhotoView>
+												<span className={styles['close-code-img']} onClick={() => closeQRCode(item)}>
+													×
+												</span>
+											</PhotoProvider>
 										</div>
 									)}
 								</div>
