@@ -1,0 +1,39 @@
+.root {
+	display: block;
+	width: 2.5rem;
+	height: 2.5rem;
+	flex: none;
+	overflow: hidden;
+	border-radius: 9999px;
+	position: relative;
+	user-select: none;
+}
+
+.image {
+	height: 100%;
+	width: 100%;
+	object-fit: cover;
+	object-position: center;
+	position: absolute;
+}
+
+.fallback {
+	display: flex;
+	height: 100%;
+	width: 100%;
+	align-items: center;
+	justify-content: center;
+	background-color: #9d174d;
+	color: white;
+	font-size: 0.875rem;
+	font-weight: 600;
+	position: absolute;
+}
+
+/* 暗色模式支持 */
+@media (prefers-color-scheme: dark) {
+	.fallback {
+		background-color: #f9a8d4;
+		color: black;
+	}
+}

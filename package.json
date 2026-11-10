@@ -1,0 +1,28 @@
+{
+  "name": "zjp-tool",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "author": "heyCHEEMS",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "pnpm build && vite preview"
+  },
+  "dependencies": {
+    "@radix-ui/react-avatar": "^1.1.11",
+    "axios": "^1.16.0",
+    "class-variance-authority": "^0.7.1",
+    "crypto-js": "^4.2.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-photo-view": "^1.2.7",
+    "react-router-dom": "^7.15.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.1",
+    "prettier": "^3.8.3",
+    "vite": "^8.0.12"
+  }
+}
