@@ -6,7 +6,7 @@ const Index = lazy(() => import('../pages/index'))
 
 const lazyLoad = Component => {
 	return (
-		<Suspense fallback={<div>加载中...</div>}>
+		<Suspense fallback={<div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">加载中…</div>}>
 			<Component></Component>
 		</Suspense>
 	)

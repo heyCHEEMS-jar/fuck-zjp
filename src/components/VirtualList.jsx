@@ -101,7 +101,11 @@ export const VirtualList = forwardRef(
 					{visibleList.map((item, index) => {
 						const realIndex = start + index
 						return (
-							<div ref={itemRefCallback(realIndex)} key={rowKey ? item[rowKey] : realIndex} style={{ width: '100%', paddingBottom: gap, boxSizing: 'border-box' }}>
+							<div
+								ref={itemRefCallback(realIndex)}
+								key={rowKey ? item[rowKey] : realIndex}
+								style={{ width: '100%', paddingBottom: gap, boxSizing: 'border-box' }}
+							>
 								{renderItem(item, realIndex)}
 							</div>
 						)
